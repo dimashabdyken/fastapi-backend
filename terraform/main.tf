@@ -15,13 +15,13 @@ provider "aws" {
 # стройка сети (VPC) 
 resource "aws_vpc" "my_vpc" {
   cidr_block = "10.0.0.0/16"
-  
+
   tags = {
     Name = "My-Terraform-VPC"
   }
 }
 
-# Шлюз в интернет (чтобы сервер видел мир)
+# Шлюз в интернет 
 resource "aws_internet_gateway" "gw" {
   vpc_id = aws_vpc.my_vpc.id
 }
@@ -40,11 +40,11 @@ resource "aws_route_table" "prod_route_table" {
 resource "aws_subnet" "my_subnet" {
   vpc_id                  = aws_vpc.my_vpc.id
   cidr_block              = "10.0.1.0/24"
-  map_public_ip_on_launch = true # ВАЖНО: Дать серверу публичный IP
+  map_public_ip_on_launch = true
   availability_zone       = "eu-central-1a"
 }
 
-# Привязываем подсеть к маршрутам
+# Привязка маршрутов к подсети
 resource "aws_route_table_association" "a" {
   subnet_id      = aws_subnet.my_subnet.id
   route_table_id = aws_route_table.prod_route_table.id
@@ -68,7 +68,7 @@ data "aws_ami" "ubuntu" {
   owners = ["099720109477"]
 }
 
-# Настраиваем Firewall (в новой сети my_vpc)
+# Firewall
 resource "aws_security_group" "web_sg" {
   name        = "jenkins_demo_sg"
   description = "Allow SSH, HTTP and Jenkins"
@@ -89,7 +89,7 @@ resource "aws_security_group" "web_sg" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-  
+
   ingress {
     description = "Jenkins"
     from_port   = 8080
@@ -106,23 +106,23 @@ resource "aws_security_group" "web_sg" {
   }
 }
 
-#  Ключи 
+# Ключи 
 resource "aws_key_pair" "deployer" {
   key_name   = "my-laptop-key"
   public_key = file("~/.ssh/id_rsa.pub")
 }
 
-# Сервер (в новой подсети)
+# Сервер 
 resource "aws_instance" "app_server" {
   ami           = data.aws_ami.ubuntu.id
   instance_type = "t2.micro"
-  
-  subnet_id     = aws_subnet.my_subnet.id # <-- СТАВИМ В НАШУ ПОДСЕТЬ
-  key_name      = aws_key_pair.deployer.key_name
+
+  subnet_id              = aws_subnet.my_subnet.id
+  key_name               = aws_key_pair.deployer.key_name
   vpc_security_group_ids = [aws_security_group.web_sg.id]
 
   tags = {
-    Name = "Django-Server-From-Terraform"
+    Name = "FastAPI-Server-From-Terraform"
   }
 }
 
