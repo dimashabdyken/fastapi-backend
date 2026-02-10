@@ -6,7 +6,7 @@ app = FastAPI()
 
 @app.get("/")
 async def read_root():
-    return {"FastApi project"}
+    return {"FastApi project!"}
 
 
 @app.get("/health")
