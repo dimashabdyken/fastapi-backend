@@ -2,8 +2,12 @@ pipeline {
     agent any
 
     environment {
+        // образ
         DOCKER_IMAGE = 'technobladedocker/django-todo:v1' 
+        // ID секрета в Jenkins
         DOCKER_CREDS = 'docker-hub-creds'
+        // Имя деплоймента в Kubernetes 
+        K8S_DEPLOYMENT_NAME = 'fastapi-web'
     }
 
     stages {
@@ -17,37 +21,39 @@ pipeline {
             steps {
                 script {
                     withCredentials([usernamePassword(credentialsId: DOCKER_CREDS, usernameVariable: 'USER', passwordVariable: 'PASS')]) {
-                        
+                        // Логин
                         sh "echo $PASS | docker login -u $USER --password-stdin"
-                        
+                        // Сборка
                         sh "docker build -t $DOCKER_IMAGE ."
-                        
+                        // Пуш в Hub
                         sh "docker push $DOCKER_IMAGE"
                     }
                 }
             }
         }
 
-        //stage('Run Tests') {
-          //  steps {
-            //    script {
-              //      sh "docker run --rm $DOCKER_IMAGE python manage.py test"
-                //}
-            //}
-        //}
-        
-        /*
-        stage('Deploy') {
+        stage('Deploy to K8s') {
             steps {
-                echo "Deploy stage is pending K8s integration..."
+                script {
+                    echo "🚀 Applying Kubernetes Manifests..."
+                    
+                    sh "kubectl apply -f k8s/"
+
+                    echo "🔄 Restarting Pods to pick up new image..."
+                    
+                    // Принудительный перезапуск, чтобы скачать свежий образ v1
+                    sh "kubectl rollout restart deployment/$K8S_DEPLOYMENT_NAME"
+                    
+                
+                }
             }
         }
-        */
     }
     
     post {
         always {
             sh 'docker logout'
+            // Удаляем локальный образ, чтобы не забивать место в Jenkins
             sh "docker rmi $DOCKER_IMAGE || true"
         }
     }
