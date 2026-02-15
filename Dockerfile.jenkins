@@ -18,9 +18,6 @@ RUN apt-get update && \
     chmod +x kubectl && \
     mv kubectl /usr/local/bin/
 
-# Установка Ansible
-RUN pip3 install ansible --break-system-packages
-
 # Права доступа
 RUN groupadd -f docker && usermod -aG docker jenkins && \
     rm -rf /var/lib/apt/lists/*
