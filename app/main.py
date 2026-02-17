@@ -38,5 +38,14 @@ def delete_task(task_id: int, db: Session = Depends(database.get_db)):
     return {"message": "Task deleted successfully"}
 
 
+@app.patch("/tasks/{task_id}", response_model=schemas.TaskResponse)
+def update_task(task_id: int, task_update: schemas.TaskUpdate, db: Session = Depends(database.get_db)):
+    db_task = crud.update_task(db, task_id=task_id, task_update=task_update)
+    if db_task is None:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return db_task
+
 if __name__ == "__main__":
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
+
+
